@@ -70,7 +70,7 @@ namespace AutoCADCreateLinks
 
         public string GroupName
         {
-            get { return "Add-Ins"; }
+            get { return "Intergration"; }
         }
 
         #endregion
@@ -146,7 +146,7 @@ namespace AutoCADCreateLinks
                             linkName = row["Layer"].ToString() + row["Segment"].ToString();
                             linkName.Replace(" ", "_");
                             linkName.Replace(".", "_");
-                            startNodeName = row["Layer"].ToString() + "_Start_" + row["Segment"].ToString();
+                            startNodeName = row["Layer"].ToString() + "_Start_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
                             startNodeName.Replace(" ", "_");
                             startNodeName.Replace(".", "_");
 
@@ -158,13 +158,13 @@ namespace AutoCADCreateLinks
                             nodeRow.Properties["ZLoc"].Value = row["StartY"].ToString();
                         }
                         lastSegment = row["Segment"].ToString();
-                        string[] vertexArray = { linkName, row["EndX"].ToString(), row["EndZ"].ToString(), row["EndY"].ToString() };
+                        string[] vertexArray = { linkName, row["Sequence"].ToString(), row["EndX"].ToString(), row["EndZ"].ToString(), row["EndY"].ToString() };
                         verticesList.Add(vertexArray);
 
                         rowIdx++;
                         if (rowIdx == numberOfRows || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
                         {
-                            endNodeName = row["Layer"].ToString().Replace(" ", "_") + "_End_" + row["Segment"].ToString();
+                            endNodeName = row["Layer"].ToString().Replace(" ", "_") + "_End_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
                             endNodeName.Replace(" ", "_");
                             endNodeName.Replace(".", "_");
 
@@ -186,9 +186,10 @@ namespace AutoCADCreateLinks
                             {
                                 var verticesRow = verticesTable.Rows.Create();
                                 verticesRow.Properties["Link"].Value = array[0];
-                                verticesRow.Properties["XLoc"].Value = array[1];
-                                verticesRow.Properties["YLoc"].Value = array[2];
-                                verticesRow.Properties["ZLoc"].Value = array[3];
+                                verticesRow.Properties["Sequence"].Value = array[1];
+                                verticesRow.Properties["XLoc"].Value = array[2];
+                                verticesRow.Properties["YLoc"].Value = array[3];
+                                verticesRow.Properties["ZLoc"].Value = array[4];
                             }
                         }
                     }
@@ -215,7 +216,7 @@ namespace AutoCADCreateLinks
 
         public string GroupName
         {
-            get { return "Add-Ins"; }
+            get { return "Intergration"; }
         }
 
         #endregion
