@@ -130,7 +130,8 @@ namespace AutoCADCreateLinks
                     nodesTable.Rows.Clear();
                     linksTable.Rows.Clear();
                     verticesTable.Rows.Clear();
-                   
+
+                    string lastLayer = String.Empty;
                     string lastSegment = String.Empty;
                     string lastSequence = String.Empty;
                     string startNodeName = String.Empty;
@@ -141,7 +142,7 @@ namespace AutoCADCreateLinks
                     var verticesList = new List<string[]>();
                     foreach (DataRow row in dataTable.Rows) 
                     {
-                        if (lastSegment != row["Segment"].ToString())
+                        if (lastLayer != row["Layer"].ToString() || lastSegment != row["Segment"].ToString())
                         {
                             linkName = row["Layer"].ToString() + row["Segment"].ToString();
                             linkName.Replace(" ", "_");
@@ -162,10 +163,11 @@ namespace AutoCADCreateLinks
                             string[] startVertexArray = { linkName, row["Sequence"].ToString(), row["StartX"].ToString(), row["StartZ"].ToString(), row["StartY"].ToString() };
                             verticesList.Add(startVertexArray);
                         }
+                        lastLayer = row["Layer"].ToString();
                         lastSegment = row["Segment"].ToString();
 
                         rowIdx++;
-                        if (rowIdx == numberOfRows || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
+                        if (rowIdx == numberOfRows || row["Layer"].ToString() != dataTable.Rows[rowIdx]["Layer"].ToString() || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
                         {
                             endNodeName = row["Layer"].ToString().Replace(" ", "_") + "_End_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
                             endNodeName.Replace(" ", "_");
@@ -194,6 +196,8 @@ namespace AutoCADCreateLinks
                                 verticesRow.Properties["YLoc"].Value = array[3];
                                 verticesRow.Properties["ZLoc"].Value = array[4];
                             }
+                            // clear vertices
+                            verticesList.Clear();
                         }
                         else
                         {
