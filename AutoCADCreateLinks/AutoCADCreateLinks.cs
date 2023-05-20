@@ -118,7 +118,7 @@ namespace AutoCADCreateLinks
                     var dataTable = AutoCADCreateLinksUtils.ConvertTableToDataTable(table);
 
                     DataView dataView = new DataView(dataTable);//datatable to dataview
-                    dataView.Sort = "Segment ASC, Sequence ASC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
+                    dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
                     dataTable = dataView.ToTable();//push the chages back to the datatable;
 
                     // get tables
@@ -157,9 +157,12 @@ namespace AutoCADCreateLinks
                             nodeRow.Properties["YLoc"].Value = row["StartZ"].ToString();
                             nodeRow.Properties["ZLoc"].Value = row["StartY"].ToString();
                         }
+                        else
+                        {
+                            string[] startVertexArray = { linkName, row["Sequence"].ToString(), row["StartX"].ToString(), row["StartZ"].ToString(), row["StartY"].ToString() };
+                            verticesList.Add(startVertexArray);
+                        }
                         lastSegment = row["Segment"].ToString();
-                        string[] vertexArray = { linkName, row["Sequence"].ToString(), row["EndX"].ToString(), row["EndZ"].ToString(), row["EndY"].ToString() };
-                        verticesList.Add(vertexArray);
 
                         rowIdx++;
                         if (rowIdx == numberOfRows || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
@@ -191,6 +194,11 @@ namespace AutoCADCreateLinks
                                 verticesRow.Properties["YLoc"].Value = array[3];
                                 verticesRow.Properties["ZLoc"].Value = array[4];
                             }
+                        }
+                        else
+                        {
+                            string[] endVertexArray = { linkName, row["Sequence"].ToString(), row["EndX"].ToString(), row["EndZ"].ToString(), row["EndY"].ToString() };
+                            verticesList.Add(endVertexArray);
                         }
                     }
                 });
