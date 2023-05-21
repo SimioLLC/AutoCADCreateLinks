@@ -118,7 +118,7 @@ namespace AutoCADCreateLinks
                     var dataTable = AutoCADCreateLinksUtils.ConvertTableToDataTable(table);
 
                     DataView dataView = new DataView(dataTable);//datatable to dataview
-                    dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
+                    dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC, StartX DESC, StartY DESC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
                     dataTable = dataView.ToTable();//push the chages back to the datatable;
 
                     // get tables
