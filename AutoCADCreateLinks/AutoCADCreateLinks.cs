@@ -114,11 +114,25 @@ namespace AutoCADCreateLinks
             {
                 context.ActiveModel.BulkUpdate(model =>
                 {
+                    bool sortXYDesc = false;
+                    DialogResult dr = MessageBox.Show("Sort Table By XY Desc?", "Sort By XY Desc?", MessageBoxButtons.YesNoCancel);
+
+                    if (dr == DialogResult.Cancel)
+                    {
+                        MessageBox.Show("Canceled by user.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                    else if (dr == DialogResult.Yes)
+                    {
+                        sortXYDesc = true;
+                    }
+
                     var table = context.ActiveModel.Tables["AutoCADExport"];
                     var dataTable = AutoCADCreateLinksUtils.ConvertTableToDataTable(table);
 
                     DataView dataView = new DataView(dataTable);//datatable to dataview
-                    dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC, StartX DESC, StartY DESC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
+                    if (sortXYDesc) dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC, StartX DESC, StartY DESC";//string that contains the column name  followed by "ASC" (ascending) or "DESC" (descending)
+                    else dataView.Sort = "Layer ASC, Segment ASC, Sequence ASC";
                     dataTable = dataView.ToTable();//push the chages back to the datatable;
 
                     // get tables
@@ -140,69 +154,94 @@ namespace AutoCADCreateLinks
                     int numberOfRows = dataTable.Rows.Count;
                     int rowIdx = 0;
                     var verticesList = new List<string[]>();
+                    String startX, startY, startZ, endX, endY, endZ = String.Empty;
                     foreach (DataRow row in dataTable.Rows) 
                     {
-                        if (lastLayer != row["Layer"].ToString() || lastSegment != row["Segment"].ToString())
+                        if (row["Name"].ToString() == "Line")
                         {
-                            linkName = row["Layer"].ToString() + row["Segment"].ToString();
-                            linkName.Replace(" ", "_");
-                            linkName.Replace(".", "_");
-                            startNodeName = row["Layer"].ToString() + "_Start_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
-                            startNodeName.Replace(" ", "_");
-                            startNodeName.Replace(".", "_");
-
-                            // add start row
-                            var nodeRow = nodesTable.Rows.Create();
-                            nodeRow.Properties["Node"].Value = startNodeName;
-                            nodeRow.Properties["XLoc"].Value = row["StartX"].ToString();
-                            nodeRow.Properties["YLoc"].Value = row["StartZ"].ToString();
-                            nodeRow.Properties["ZLoc"].Value = row["StartY"].ToString();
-                        }
-                        else
-                        {
-                            string[] startVertexArray = { linkName, row["Sequence"].ToString(), row["StartX"].ToString(), row["StartZ"].ToString(), row["StartY"].ToString() };
-                            verticesList.Add(startVertexArray);
-                        }
-                        lastLayer = row["Layer"].ToString();
-                        lastSegment = row["Segment"].ToString();
-
-                        rowIdx++;
-                        if (rowIdx == numberOfRows || row["Layer"].ToString() != dataTable.Rows[rowIdx]["Layer"].ToString() || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
-                        {
-                            endNodeName = row["Layer"].ToString().Replace(" ", "_") + "_End_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
-                            endNodeName.Replace(" ", "_");
-                            endNodeName.Replace(".", "_");
-
-                            // add end node
-                            var nodeRow = nodesTable.Rows.Create();
-                            nodeRow.Properties["Node"].Value = endNodeName;
-                            nodeRow.Properties["XLoc"].Value = row["EndX"].ToString();
-                            nodeRow.Properties["YLoc"].Value = row["EndZ"].ToString();
-                            nodeRow.Properties["ZLoc"].Value = row["EndY"].ToString();
-
-                            // add link
-                            var linkRow = linksTable.Rows.Create();
-                            linkRow.Properties["Link"].Value = linkName;
-                            linkRow.Properties["StartingNode"].Value = startNodeName;
-                            linkRow.Properties["EndingNode"].Value = endNodeName;
-
-                            // add vertices
-                            foreach (var array in verticesList)
+                            if ((Convert.ToBoolean(row["ForceEndToStart"].ToString()) == false) && ((Convert.ToDouble(row["StartX"].ToString()) < Convert.ToDouble(row["EndX"].ToString())) ||
+                            (Convert.ToDouble(row["StartX"].ToString()) == Convert.ToDouble(row["EndX"].ToString()) &&
+                            Convert.ToDouble(row["StartY"].ToString()) > Convert.ToDouble(row["EndY"].ToString()))))
                             {
-                                var verticesRow = verticesTable.Rows.Create();
-                                verticesRow.Properties["Link"].Value = array[0];
-                                verticesRow.Properties["Sequence"].Value = array[1];
-                                verticesRow.Properties["XLoc"].Value = array[2];
-                                verticesRow.Properties["YLoc"].Value = array[3];
-                                verticesRow.Properties["ZLoc"].Value = array[4];
+                                startX = row["StartX"].ToString();
+                                startY = row["StartY"].ToString(); 
+                                startZ = row["StartZ"].ToString();
+                                endX = row["EndX"].ToString();
+                                endY = row["EndY"].ToString();
+                                endZ = row["EndZ"].ToString();
                             }
-                            // clear vertices
-                            verticesList.Clear();
-                        }
-                        else
-                        {
-                            string[] endVertexArray = { linkName, row["Sequence"].ToString(), row["EndX"].ToString(), row["EndZ"].ToString(), row["EndY"].ToString() };
-                            verticesList.Add(endVertexArray);
+                            else
+                            {
+                                startX = row["EndX"].ToString();
+                                startY = row["EndY"].ToString();
+                                startZ = row["EndZ"].ToString();
+                                endX = row["StartX"].ToString();
+                                endY = row["StartY"].ToString();
+                                endZ = row["StartZ"].ToString();
+                            }
+
+                            if (lastLayer != row["Layer"].ToString() || lastSegment != row["Segment"].ToString())
+                            {
+                                linkName = row["Layer"].ToString() + row["Segment"].ToString();
+                                linkName.Replace(" ", "_");
+                                linkName.Replace(".", "_");
+                                startNodeName = row["Layer"].ToString() + "_Start_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
+                                startNodeName.Replace(" ", "_");
+                                startNodeName.Replace(".", "_");
+
+                                // add start row
+                                var nodeRow = nodesTable.Rows.Create();
+                                nodeRow.Properties["Node"].Value = startNodeName;
+                                nodeRow.Properties["XLoc"].Value = startX;
+                                nodeRow.Properties["YLoc"].Value = startZ;
+                                nodeRow.Properties["ZLoc"].Value = startY;
+                            }
+                            else
+                            {
+                                string[] startVertexArray = { linkName, row["Sequence"].ToString(), startX, startZ, startY };
+                                verticesList.Add(startVertexArray);
+                            }
+                            lastLayer = row["Layer"].ToString();
+                            lastSegment = row["Segment"].ToString();
+
+                            rowIdx++;
+                            if (rowIdx == numberOfRows || row["Layer"].ToString() != dataTable.Rows[rowIdx]["Layer"].ToString() || row["Segment"].ToString() != dataTable.Rows[rowIdx]["Segment"].ToString())
+                            {
+                                endNodeName = row["Layer"].ToString().Replace(" ", "_") + "_End_" + row["Segment"].ToString() + "_" + row["Sequence"].ToString();
+                                endNodeName.Replace(" ", "_");
+                                endNodeName.Replace(".", "_");
+
+                                // add end node
+                                var nodeRow = nodesTable.Rows.Create();
+                                nodeRow.Properties["Node"].Value = endNodeName;
+                                nodeRow.Properties["XLoc"].Value = endX;
+                                nodeRow.Properties["YLoc"].Value = endZ;
+                                nodeRow.Properties["ZLoc"].Value = endY;
+
+                                // add link
+                                var linkRow = linksTable.Rows.Create();
+                                linkRow.Properties["Link"].Value = linkName;
+                                linkRow.Properties["StartingNode"].Value = startNodeName;
+                                linkRow.Properties["EndingNode"].Value = endNodeName;
+
+                                // add vertices
+                                foreach (var array in verticesList)
+                                {
+                                    var verticesRow = verticesTable.Rows.Create();
+                                    verticesRow.Properties["Link"].Value = array[0];
+                                    verticesRow.Properties["Sequence"].Value = array[1];
+                                    verticesRow.Properties["XLoc"].Value = array[2];
+                                    verticesRow.Properties["YLoc"].Value = array[3];
+                                    verticesRow.Properties["ZLoc"].Value = array[4];
+                                }
+                                // clear vertices
+                                verticesList.Clear();
+                            }
+                            else
+                            {
+                                string[] endVertexArray = { linkName, row["Sequence"].ToString(), endX, endZ, endY };
+                                verticesList.Add(endVertexArray);
+                            }
                         }
                     }
                 });
